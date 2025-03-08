@@ -1,0 +1,350 @@
+-- Load Evocati Hub
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Evocati Hub", "Midnight")
+
+-- Create Tabs and Sections
+local AdminTab = Window:NewTab("Admin")
+local AdminSection = AdminTab:NewSection("Admin")
+local PlayerTab = Window:NewTab("Player")
+local MovementSection = PlayerTab:NewSection("Movement")
+local PlayerSection = PlayerTab:NewSection("Player")
+
+-- Services and Variables
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local flightEnabled = false
+local flightSpeed = 1 -- Base flight speed (will be multiplied by 20)
+local vertical = 0    -- Vertical movement: 1 = up, -1 = down
+local directFlightMode = false  -- false = Controlled (default), true = Camera-Direct
+local animConnection    -- Connection to freeze new animations
+
+-- Infinite Jump Variables
+local infiniteJumpEnabled = false
+local jumpConnection = nil
+_G.JumpHeight = 50
+
+-- Invincibility Variables
+local invincibilityEnabled = false
+local invincibilityHealthConn = nil
+local originalNewIndex = nil
+
+-- Utility functions to get character parts
+local function getHumanoid()
+    local character = LocalPlayer.Character
+    return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getTorso()
+    local character = LocalPlayer.Character
+    return character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
+end
+
+-- Freeze current playing animations by setting their speed to 0
+local function freezeAnimations()
+    local humanoid = getHumanoid()
+    if not humanoid then return end
+    for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+        track:AdjustSpeed(0)
+    end
+end
+
+-- Unfreeze animations by resetting their speed to 1
+local function unfreezeAnimations()
+    local humanoid = getHumanoid()
+    if not humanoid then return end
+    for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+        track:AdjustSpeed(1)
+    end
+end
+
+-- Set up vertical movement keybindings (E for up, Q for down)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.E then
+        vertical = 1
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        vertical = -1
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.Q then
+        vertical = 0
+    end
+end)
+
+-- Flight loop: sets up flight physics, freezes animations, and updates velocity in real time.
+local function flightLoop()
+    local humanoid = getHumanoid()
+    local torso = getTorso()
+    if not humanoid or not torso then return end
+
+    -- Freeze animations immediately and pause any new ones
+    freezeAnimations()
+    animConnection = humanoid.AnimationPlayed:Connect(function(track)
+        track:AdjustSpeed(0)
+    end)
+
+    -- Create flight physics objects
+    local bodyGyro = Instance.new("BodyGyro", torso)
+    bodyGyro.P = 90000
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.CFrame = torso.CFrame
+
+    local bodyVelocity = Instance.new("BodyVelocity", torso)
+    bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+    -- Freeze default humanoid control
+    humanoid.PlatformStand = true
+
+    -- Flight update loop
+    while flightEnabled and humanoid and humanoid.Health > 0 do
+        RunService.RenderStepped:Wait()
+        local effectiveSpeed = flightSpeed * 20 -- 20x multiplier
+        local velocity = Vector3.new(0, 0, 0)
+        local camera = workspace.CurrentCamera
+
+        if directFlightMode then
+            -- Camera-Direct mode: move only when WASD (and vertical) keys are pressed
+            local moveVector = Vector3.new(0, 0, 0)
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveVector = moveVector + Vector3.new(0, 0, -1)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveVector = moveVector + Vector3.new(0, 0, 1)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveVector = moveVector + Vector3.new(-1, 0, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveVector = moveVector + Vector3.new(1, 0, 0)
+            end
+            moveVector = moveVector + Vector3.new(0, vertical, 0)
+            
+            if moveVector.Magnitude > 0 then
+                velocity = camera.CFrame:VectorToWorldSpace(moveVector.Unit) * effectiveSpeed
+            else
+                velocity = Vector3.new(0, 0, 0)
+            end
+        else
+            -- Controlled mode: use Humanoid.MoveDirection and vertical input
+            local moveDir = humanoid.MoveDirection
+            velocity = (moveDir * effectiveSpeed) + Vector3.new(0, vertical * effectiveSpeed, 0)
+        end
+
+        bodyVelocity.Velocity = velocity
+
+        if camera then
+            bodyGyro.CFrame = camera.CFrame
+        end
+    end
+
+    -- Cleanup when flight is turned off or player dies
+    if animConnection then
+        animConnection:Disconnect()
+        animConnection = nil
+    end
+    bodyGyro:Destroy()
+    bodyVelocity:Destroy()
+    if humanoid then
+        humanoid.PlatformStand = false
+        unfreezeAnimations()
+    end
+end
+
+-- Toggle flight on/off
+local function toggleFlight()
+    flightEnabled = not flightEnabled
+    if flightEnabled then
+        task.spawn(flightLoop)
+    end
+end
+
+-- Toggle flight mode: Controlled vs. Camera-Direct
+local function toggleFlightMode()
+    directFlightMode = not directFlightMode
+    local mode = directFlightMode and "Camera-Direct" or "Controlled"
+    print("Flight Mode: " .. mode)
+end
+
+-- Toggle infinite jump on/off
+local function toggleInfiniteJump()
+    infiniteJumpEnabled = not infiniteJumpEnabled
+    if infiniteJumpEnabled then
+        if not jumpConnection then
+            jumpConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if gameProcessed then return end
+                if input.KeyCode == Enum.KeyCode.Space then
+                    local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Seated then
+                        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            hrp.Velocity = Vector3.new(0, _G.JumpHeight, 0)
+                        end
+                    end
+                end
+            end)
+        end
+    else
+        if jumpConnection then
+            jumpConnection:Disconnect()
+            jumpConnection = nil
+        end
+    end
+end
+
+-- Invincibility functions
+local function enableInvincibility()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    -- Set infinite health values
+    humanoid.MaxHealth = 69420
+    humanoid.Health = 69420
+
+    -- Prevent game scripts from reducing health
+    invincibilityHealthConn = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+        if humanoid.Health < math.huge then
+            humanoid.Health = math.huge
+        end
+    end)
+
+    -- Disable death state
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+
+    -- Make body parts immune to kill parts
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanTouch = false
+        end
+    end
+
+    -- Modify metatable to block health reductions
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    originalNewIndex = originalNewIndex or mt.__newindex
+    mt.__newindex = newcclosure(function(self, key, value)
+        if self == humanoid and key == "Health" and value < math.huge then
+            return
+        end
+        return originalNewIndex(self, key, value)
+    end)
+
+    -- Auto-respawn invincibility
+    LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+        wait(0.1)
+        character = newCharacter
+        humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.Health = math.huge
+            humanoid.MaxHealth = math.huge
+        end
+    end)
+end
+
+local function disableInvincibility()
+    if invincibilityHealthConn then
+        invincibilityHealthConn:Disconnect()
+        invincibilityHealthConn = nil
+    end
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            -- Reset health values to defaults (or you can choose other values)
+            humanoid.MaxHealth = 100
+            humanoid.Health = 100
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+        end
+    end
+    -- Attempt to restore original metatable behavior
+    if originalNewIndex then
+        local mt = getrawmetatable(game)
+        mt.__newindex = originalNewIndex
+    end
+end
+
+local function toggleInvincibility()
+    invincibilityEnabled = not invincibilityEnabled
+    if invincibilityEnabled then
+        enableInvincibility()
+        -- Change the health slider text to indicate it is disabled
+        if healthSlider and healthSlider.Main then
+            local title = healthSlider.Main:FindFirstChild("Title")
+            if title then
+                title.Text = "Health (disabled)"
+            end
+        end
+    else
+        disableInvincibility()
+        if healthSlider and healthSlider.Main then
+            local title = healthSlider.Main:FindFirstChild("Title")
+            if title then
+                title.Text = "Health"
+            end
+        end
+    end
+    print("Invincibility: " .. tostring(invincibilityEnabled))
+end
+
+-- UI Elements
+
+-- Admin Button: Infinite Yield FE
+AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD admin", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", true))()
+end)
+
+-- Movement Section UI Elements
+MovementSection:NewSlider("Walkspeed", "Speed of your character", 500, 16, function(s)
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.WalkSpeed = s
+    end
+end)
+
+MovementSection:NewSlider("Jump Power", "How high you can jump", 250, 50, function(s)
+	_G.JumpHeight = s
+	local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.JumpPower = s
+	end
+end)
+
+MovementSection:NewButton("Toggle Flight", "Enables and Disables flight", function()
+    toggleFlight()
+end)
+
+MovementSection:NewSlider("FlightSpeed", "Change the speed of flight", 100, 1, function(s)
+    flightSpeed = s
+end)
+
+MovementSection:NewButton("Toggle Flight Mode", "Switch between Controlled and Camera-Direct flight", function()
+    toggleFlightMode()
+end)
+
+MovementSection:NewButton("Toggle Infinite Jump", "Enables or disables infinite jumping", function()
+    toggleInfiniteJump()
+    print("Infinite Jump: " .. tostring(infiniteJumpEnabled))
+end)
+
+-- Player Section UI Elements
+local healthSlider = PlayerSection:NewSlider("Health", "Change your health", 10000, 100, function(s)
+    if invincibilityEnabled then
+        return  -- Ignore changes while invincibility is active
+    end
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.MaxHealth = s
+        humanoid.Health = s
+    end
+end)
+
+PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibility", function()
+    toggleInvincibility()
+end)
