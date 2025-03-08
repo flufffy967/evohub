@@ -1,12 +1,13 @@
--- Load Evocati Hub
+-- Load Evocati Hub (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub", "Midnight")
+local Window = Library.CreateLib("Evocati Hub", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
 local AdminSection = AdminTab:NewSection("Admin")
 local PlayerTab = Window:NewTab("Player")
 local MovementSection = PlayerTab:NewSection("Movement")
+local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
 
 -- Services and Variables
@@ -159,6 +160,13 @@ end
 
 -- Toggle flight on/off
 local function toggleFlight()
+	if flightEnabled == false then
+		titel = "Enabled"
+	else
+		titel = "Disabled"
+	end
+	txet = "Flight"
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
     flightEnabled = not flightEnabled
     if flightEnabled then
         task.spawn(flightLoop)
@@ -167,6 +175,13 @@ end
 
 -- Toggle flight mode: Controlled vs. Camera-Direct
 local function toggleFlightMode()
+	if directFlightMode == false then
+		titel = "Camera-Direct"
+	else
+		titel = "Controlled"
+	end
+	txet = "Flight Mode"
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
     directFlightMode = not directFlightMode
     local mode = directFlightMode and "Camera-Direct" or "Controlled"
     print("Flight Mode: " .. mode)
@@ -271,6 +286,13 @@ local function disableInvincibility()
 end
 
 local function toggleInvincibility()
+		if invincibilityEnabled == false then
+		titel = "Enabled"
+	else
+		titel = "Disabled"
+	end
+	txet = "Invincibility"
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
     invincibilityEnabled = not invincibilityEnabled
     if invincibilityEnabled then
         enableInvincibility()
@@ -290,7 +312,6 @@ local function toggleInvincibility()
             end
         end
     end
-    print("Invincibility: " .. tostring(invincibilityEnabled))
 end
 
 -- UI Elements
@@ -316,21 +337,27 @@ MovementSection:NewSlider("Jump Power", "How high you can jump", 250, 50, functi
 	end
 end)
 
-MovementSection:NewButton("Toggle Flight", "Enables and Disables flight", function()
+FlightSection:NewButton("Toggle Flight", "Enables and Disables flight", function()
     toggleFlight()
 end)
 
-MovementSection:NewSlider("FlightSpeed", "Change the speed of flight", 100, 1, function(s)
+FlightSection:NewSlider("FlightSpeed", "Change the speed of flight", 100, 1, function(s)
     flightSpeed = s
 end)
 
-MovementSection:NewButton("Toggle Flight Mode", "Switch between Controlled and Camera-Direct flight", function()
+FlightSection:NewButton("Toggle Flight Mode", "Switch between Controlled and Camera-Direct flight", function()
     toggleFlightMode()
 end)
 
 MovementSection:NewButton("Toggle Infinite Jump", "Enables or disables infinite jumping", function()
     toggleInfiniteJump()
-    print("Infinite Jump: " .. tostring(infiniteJumpEnabled))
+	if infiniteJumpEnabled == true then
+		titel = "Enabled"
+	else
+		titel = "Disabled"
+	end
+	txet = "Infinite Jump"
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
 end)
 
 -- Player Section UI Elements
