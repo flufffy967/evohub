@@ -1,3 +1,4 @@
+-- made by 1ndrew
 function sandbox(var,func)
 	local env = getfenv(func)
 	local newenv = setmetatable({},{
@@ -375,15 +376,6 @@ local Settings = {
 	,SpreadReduction = 5
 	--Weld
 	,Weld = true
-	--Mouse
-	,Icons = {
-		Idle = "rbxassetid://70288585"
-		,Fire1 = "rbxassetid://70288578"
-		,Fire2 = "rbxassetid://70288572"
-		,Fire3 = "rbxassetid://70288578"
-		,Reload = "rbxassetid://70288599"
-		,Aim = "rbxasset://textures/Blank.png"
-	}
 	,FireMouseAnimTime = 0.15
 	--Recoil
 	,Recoil = math.rad(1)
@@ -534,7 +526,6 @@ Tool.Equipped:connect(function(Mouse)
 		return
 	end
 	Ray_Ignore = {Character, Ignore_Model, Camera}
-	Mouse.Icon = Settings.Icons.Idle
 	Gui = script.Gui:Clone()
 	Gui.Parent = Player.PlayerGui
 	Gui.Frame.Position = UDim2.new(Settings.GuiPos.X, Gui.Frame.Position.X.Offset, 1.1, Gui.Frame.Position.Y.Offset)
