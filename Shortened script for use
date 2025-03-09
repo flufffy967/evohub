@@ -1,0 +1,2 @@
+--Evocati Library V0.29
+loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/evohub"))()
