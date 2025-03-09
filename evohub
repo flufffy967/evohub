@@ -1,6 +1,6 @@
--- Load Evocati Hub v0.27 (based on Kavo Library)
+-- Load Evocati Hub v0.28 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub v0.27", "Ocean")
+local Window = Library.CreateLib("Evocati Hub v0.28", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
@@ -9,7 +9,11 @@ local PlayerTab = Window:NewTab("Player")
 local MovementSection = PlayerTab:NewSection("Movement")
 local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
-
+local InfoTab = Window:NewTab("Info")
+local InfoSection = InfoTab:NewSection("Info")
+InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","In this dropdown, clicking on an issue changes the title"}, function(currentOption)
+    print("Evocati Hub Bug Occurede")
+end)
 -- Services and Variables
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -41,7 +45,11 @@ local function getHumanoid()
 end
 
 local function sendNotif()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
+	game:GetService("StarterGui"):SetCore("SendNotification", { 
+	Title = titel;
+	Text = txet;
+	Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
+	Duration = 5;
 end
 
 local function getTorso()
@@ -115,6 +123,14 @@ local function flightLoop()
         local effectiveSpeed = flightSpeed * 20 -- 20x multiplier
         local velocity = Vector3.new(0, 0, 0)
         local camera = workspace.CurrentCamera
+
+        -- Capture vertical input for Q (down) and E (up)
+        local vertical = 0
+        if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
+            vertical = -1 -- Move down
+        elseif UserInputService:IsKeyDown(Enum.KeyCode.E) then
+            vertical = 1 -- Move up
+        end
 
         if directFlightMode then
             -- Camera-Direct mode: move only when WASD (and vertical) keys are pressed
@@ -276,22 +292,28 @@ local function disableInvincibility()
         invincibilityHealthConn:Disconnect()
         invincibilityHealthConn = nil
     end
-    local character = LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            -- Reset health values to defaults (or you can choose other values)
-            humanoid.MaxHealth = 100
-            humanoid.Health = 100
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-        end
+
+    -- Reset the character by calling LoadCharacter
+    LocalPlayer:LoadCharacter()
+
+    -- You don't need to manually reset health or states anymore, as LoadCharacter does that automatically.
+
+    -- Optionally, you can wait for the new character to be fully loaded and teleport it to the original position
+    local character = LocalPlayer.CharacterAdded:Wait()
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    
+    if rootPart then
+        -- Teleport the player back to the saved position if you want to preserve the position
+        rootPart.CFrame = savedCFrame
     end
+
     -- Attempt to restore original metatable behavior
     if originalNewIndex then
         local mt = getrawmetatable(game)
         mt.__newindex = originalNewIndex
     end
 end
+
 
 local function toggleInvincibility()
 		if invincibilityEnabled == false then
@@ -330,7 +352,7 @@ AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD adm
 end)
 
 -- Movement Section UI Elements
-MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 0, function(value)
+MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 8, function(value)
     local humanoid = getHumanoid()
     if humanoid then
         humanoid.WalkSpeed = value
@@ -338,7 +360,7 @@ MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 0, function(val
     end
 end)
 
-MovementSection:NewSlider("Jump Power", "How high you jump", 250, 0, function(value)
+MovementSection:NewSlider("Jump Power", "How high you jump", 250, 50, function(value)
     local humanoid = getHumanoid()
     if humanoid then
         humanoid.JumpPower = value
@@ -397,14 +419,14 @@ end)
 PlayerSection:NewButton("Heal", "Refills your health", function()
     local humanoid = getHumanoid()
     if humanoid then
-        humanoid.Health = humanoid.MaxHealth
+        -- Apply negative damage to heal
+        while humanoid.Health < humanoid.MaxHealth do
+            humanoid:TakeDamage(-humanoid.Health-humanoid.MaxHealth)  -- Applying negative damage to heal
+            wait(0)  -- Delay to allow the health to regenerate
+        end
     end
 end)
 
 PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibility", function()
     toggleInvincibility()
-end)
-
-PlayerSection:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.e, function()
-	Library:ToggleUI()
 end)
