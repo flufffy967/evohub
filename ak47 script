@@ -1,4 +1,3 @@
--- made by 1ndrew
 function sandbox(var,func)
 	local env = getfenv(func)
 	local newenv = setmetatable({},{
