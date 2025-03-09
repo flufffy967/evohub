@@ -351,6 +351,10 @@ AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD adm
     loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", true))()
 end)
 
+AdminSection:NewButton("HatHub", "Only works on 'Just a baseplate'", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/inkdupe/hat-scripts/refs/heads/main/updatedhathub.lua"))()
+end)
+
 -- Movement Section UI Elements
 MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 16, function(value)
     local humanoid = getHumanoid()
