@@ -1,6 +1,6 @@
--- Load Evocati Hub (based on Kavo Library)
+-- Load Evocati Hub v0.27 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub", "Ocean")
+local Window = Library.CreateLib("Evocati Hub v0.27", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
@@ -25,6 +25,8 @@ local animConnection    -- Connection to freeze new animations
 -- Infinite Jump Variables
 local infiniteJumpEnabled = false
 local jumpConnection = nil
+local defaultWalkSpeed = 16
+local defaultJumpPower = 50
 _G.JumpHeight = 50
 
 -- Invincibility Variables
@@ -36,6 +38,10 @@ local originalNewIndex = nil
 local function getHumanoid()
     local character = LocalPlayer.Character
     return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function sendNotif()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
 end
 
 local function getTorso()
@@ -166,7 +172,7 @@ local function toggleFlight()
 		titel = "Disabled"
 	end
 	txet = "Flight"
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
+	sendNotif()
     flightEnabled = not flightEnabled
     if flightEnabled then
         task.spawn(flightLoop)
@@ -181,7 +187,7 @@ local function toggleFlightMode()
 		titel = "Controlled"
 	end
 	txet = "Flight Mode"
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
+	sendNotif()
     directFlightMode = not directFlightMode
     local mode = directFlightMode and "Camera-Direct" or "Controlled"
     print("Flight Mode: " .. mode)
@@ -199,7 +205,8 @@ local function toggleInfiniteJump()
                     if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Seated then
                         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                            hrp.Velocity = Vector3.new(0, _G.JumpHeight, 0)
+                            -- Preserve the X and Z velocity, only change the Y
+                            hrp.Velocity = Vector3.new(hrp.Velocity.X, _G.JumpHeight, hrp.Velocity.Z)
                         end
                     end
                 end
@@ -212,6 +219,7 @@ local function toggleInfiniteJump()
         end
     end
 end
+
 
 -- Invincibility functions
 local function enableInvincibility()
@@ -292,7 +300,7 @@ local function toggleInvincibility()
 		titel = "Disabled"
 	end
 	txet = "Invincibility"
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
+	sendNotif()
     invincibilityEnabled = not invincibilityEnabled
     if invincibilityEnabled then
         enableInvincibility()
@@ -322,19 +330,33 @@ AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD adm
 end)
 
 -- Movement Section UI Elements
-MovementSection:NewSlider("Walkspeed", "Speed of your character", 500, 16, function(s)
+MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 0, function(value)
     local humanoid = getHumanoid()
     if humanoid then
-        humanoid.WalkSpeed = s
+        humanoid.WalkSpeed = value
+        defaultWalkSpeed = value
     end
 end)
 
-MovementSection:NewSlider("Jump Power", "How high you can jump", 250, 50, function(s)
-	_G.JumpHeight = s
-	local humanoid = getHumanoid()
+MovementSection:NewSlider("Jump Power", "How high you jump", 250, 0, function(value)
+    local humanoid = getHumanoid()
     if humanoid then
-        humanoid.JumpPower = s
-	end
+        humanoid.JumpPower = value
+        defaultJumpPower = value
+    end
+end)
+
+-- Monitor WalkSpeed and JumpPower to prevent changes
+RunService.Stepped:Connect(function()
+    local humanoid = getHumanoid()
+    if humanoid then
+        if humanoid.WalkSpeed ~= defaultWalkSpeed then
+            humanoid.WalkSpeed = defaultWalkSpeed
+        end
+        if humanoid.JumpPower ~= defaultJumpPower then
+            humanoid.JumpPower = defaultJumpPower
+        end
+    end
 end)
 
 FlightSection:NewButton("Toggle Flight", "Enables and Disables flight", function()
@@ -357,11 +379,11 @@ MovementSection:NewButton("Toggle Infinite Jump", "Enables or disables infinite 
 		titel = "Disabled"
 	end
 	txet = "Infinite Jump"
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/notification"))()
+	sendNotif()
 end)
 
 -- Player Section UI Elements
-local healthSlider = PlayerSection:NewSlider("Health", "Change your health", 10000, 100, function(s)
+local healthSlider = PlayerSection:NewSlider("Max Health", "Change your max health", 10000, 100, function(s)
     if invincibilityEnabled then
         return  -- Ignore changes while invincibility is active
     end
@@ -372,6 +394,17 @@ local healthSlider = PlayerSection:NewSlider("Health", "Change your health", 100
     end
 end)
 
+PlayerSection:NewButton("Heal", "Refills your health", function()
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.Health = humanoid.MaxHealth
+    end
+end)
+
 PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibility", function()
     toggleInvincibility()
+end)
+
+PlayerSection:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.e, function()
+	Library:ToggleUI()
 end)
