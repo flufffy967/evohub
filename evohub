@@ -1,4 +1,4 @@
--- Load Evocati Hub v0.28 (based on Kavo Library)
+-- Load Evocati Hub v0.29 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Evocati Hub v0.28", "Ocean")
 
@@ -11,9 +11,13 @@ local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
 local InfoTab = Window:NewTab("Info")
 local InfoSection = InfoTab:NewSection("Info")
-InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot fully disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","-In this dropdown, Clicking on an issue changes the title","Hathub ui looks bad, will probably import in here","-Add a comment on the github to report more issues"}, function(currentOption)
+local ItemsTab = Window:NewTab("Items")
+local ItemsSection = ItemsTab:NewSection("Items")
+
+InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot fully disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","-In this dropdown, Clicking on an issue changes the title","-Hathub ui looks bad, will probably import in here","-Jerk off names arent consistent","-Add a comment on the github to report more issues"}, function(currentOption)
     print("madebyevocati967")
 end)
+
 -- Services and Variables
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -434,4 +438,12 @@ end)
 
 PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibility", function()
     toggleInvincibility()
+end)
+
+ItemsSection:NewButton("(R6) Jerk Off", "Only works in R6", function()
+    loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
+end)
+
+ItemsSection:NewButton("(R15) Jerk Off", "Only works in R15", function()
+    loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
 end)
