@@ -11,8 +11,8 @@ local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
 local InfoTab = Window:NewTab("Info")
 local InfoSection = InfoTab:NewSection("Info")
-InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","In this dropdown, clicking on an issue changes the title"}, function(currentOption)
-    print("Evocati Hub Bug Occurede")
+InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot fully disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","-In this dropdown, Clicking on an issue changes the title","-Add a comment on the github to report more issues"}, function(currentOption)
+    print("skibidi")
 end)
 -- Services and Variables
 local Players = game:GetService("Players")
@@ -352,7 +352,7 @@ AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD adm
 end)
 
 -- Movement Section UI Elements
-MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 8, function(value)
+MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 16, function(value)
     local humanoid = getHumanoid()
     if humanoid then
         humanoid.WalkSpeed = value
@@ -366,6 +366,7 @@ MovementSection:NewSlider("Jump Power", "How high you jump", 250, 50, function(v
         humanoid.JumpPower = value
         defaultJumpPower = value
     end
+	_G.JumpHeight = value
 end)
 
 -- Monitor WalkSpeed and JumpPower to prevent changes
