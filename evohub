@@ -1,6 +1,6 @@
--- Load Evocati Hub v0.29 (based on Kavo Library)
+-- Load Evocati Hub v0.30 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub v0.29", "Ocean")
+local Window = Library.CreateLib("Evocati Hub v0.30", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
@@ -9,10 +9,10 @@ local PlayerTab = Window:NewTab("Player")
 local MovementSection = PlayerTab:NewSection("Movement")
 local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
-local InfoTab = Window:NewTab("Info")
-local InfoSection = InfoTab:NewSection("Info")
 local ItemsTab = Window:NewTab("Items")
 local ItemsSection = ItemsTab:NewSection("Items")
+local InfoTab = Window:NewTab("Info")
+local InfoSection = InfoTab:NewSection("Info")
 
 InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot fully disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","-In this dropdown, Clicking on an issue changes the title","-Hathub ui looks bad, will probably import in here","-Jerk off names arent consistent","-Add a comment on the github to report more issues"}, function(currentOption)
     print("madebyevocati967")
@@ -25,10 +25,10 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 local flightEnabled = false
-local flightSpeed = 1 -- Base flight speed (will be multiplied by 20)
-local vertical = 0    -- Vertical movement: 1 = up, -1 = down
-local directFlightMode = false  -- false = Controlled (default), true = Camera-Direct
-local animConnection    -- Connection to freeze new animations
+local flightSpeed = 1
+local vertical = 0
+local directFlightMode = false
+local animConnection
 
 -- Infinite Jump Variables
 local infiniteJumpEnabled = false
@@ -61,7 +61,7 @@ local function getTorso()
     return character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
 end
 
--- Freeze current playing animations by setting their speed to 0
+-- Freeze current playing animations by setting their anim speed to 0
 local function freezeAnimations()
     local humanoid = getHumanoid()
     if not humanoid then return end
@@ -124,7 +124,7 @@ local function flightLoop()
     -- Flight update loop
     while flightEnabled and humanoid and humanoid.Health > 0 do
         RunService.RenderStepped:Wait()
-        local effectiveSpeed = flightSpeed * 20 -- 20x multiplier
+        local effectiveSpeed = flightSpeed * 20
         local velocity = Vector3.new(0, 0, 0)
         local camera = workspace.CurrentCamera
 
@@ -291,27 +291,16 @@ local function enableInvincibility()
     end)
 end
 
-local function disableInvincibility()
+local function disableInvincibility() -- broken, idk how to make this work right
     if invincibilityHealthConn then
         invincibilityHealthConn:Disconnect()
         invincibilityHealthConn = nil
     end
 
-    -- Reset the character by calling LoadCharacter
     LocalPlayer:LoadCharacter()
-
-    -- You don't need to manually reset health or states anymore, as LoadCharacter does that automatically.
-
-    -- Optionally, you can wait for the new character to be fully loaded and teleport it to the original position
     local character = LocalPlayer.CharacterAdded:Wait()
     local rootPart = character:WaitForChild("HumanoidRootPart")
-    
-    if rootPart then
-        -- Teleport the player back to the saved position if you want to preserve the position
-        rootPart.CFrame = savedCFrame
-    end
 
-    -- Attempt to restore original metatable behavior
     if originalNewIndex then
         local mt = getrawmetatable(game)
         mt.__newindex = originalNewIndex
@@ -332,7 +321,7 @@ local function toggleInvincibility()
         enableInvincibility()
         -- Change the health slider text to indicate it is disabled
         if healthSlider and healthSlider.Main then
-            local title = healthSlider.Main:FindFirstChild("Title")
+            local title = healthSlider.Main:FindFirstChild("Title") -- UPDATE THIS
             if title then
                 title.Text = "Health (disabled)"
             end
@@ -351,11 +340,11 @@ end
 -- UI Elements
 
 -- Admin Button: Infinite Yield FE
-AdminSection:NewButton("Infinite Yield FE", "An admin console, similar to HD admin", function()
+AdminSection:NewButton("Infinite Yield FE", "A popular 'admin' console", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", true))()
 end)
 
-AdminSection:NewButton("HatHub", "Only works on 'Just a baseplate'", function()
+AdminSection:NewButton("HatHub (Just a baseplate)", "Only works on 'Just a baseplate'", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/inkdupe/hat-scripts/refs/heads/main/updatedhathub.lua"))()
 end)
 
@@ -442,10 +431,50 @@ PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibili
     toggleInvincibility()
 end)
 
-ItemsSection:NewButton("(R6) Jerk Off", "Only works in R6", function()
-    loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
-end)
+ItemsSection:NewButton("Click Teleport", "Wherever you click, you get teleported", function()
+    mouse = game.Players.LocalPlayer:GetMouse()
+	tool = Instance.new("Tool")
+	tool.RequiresHandle = false
+	tool.Name = "Click Teleport"
+	tool.Activated:connect(function()
+	local pos = mouse.Hit+Vector3.new(0,2.5,0)
+	pos = CFrame.new(pos.X,pos.Y,pos.Z)
+	game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+	end)
+	tool.Parent = game.Players.LocalPlayer.Backpack
+	end)
 
-ItemsSection:NewButton("(R15) Jerk Off", "Only works in R15", function()
-    loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
+ItemsSection:NewButton("Jerk Off", "Jerk off item", function()
+	local function isR6(character)
+    	return character:FindFirstChild("Torso") and not character:FindFirstChild("UpperTorso")
+	end
+
+	local function isR15(character)
+    	return character:FindFirstChild("UpperTorso") ~= nil
+	end
+
+	local player = game.Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+
+	if isR6(character) then
+    	loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
+
+		-- Set notification values BEFORE calling sendNotif()
+		title = "Jerk Off"
+		text = "Item received"
+		sendNotif()
+		
+	elseif isR15(character) then
+    	loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
+
+		-- Set notification values BEFORE calling sendNotif()
+		title = "Jerk Off"
+		text = "Item received"
+		sendNotif()
+		
+	else
+    	title = "Jerk Off Error:"
+		text = "Unknown character type"
+		sendNotif()
+	end
 end)
