@@ -241,17 +241,22 @@ local function toggleInfiniteJump()
 end
 
 
--- Invincibility functions
+-- Invincibility script
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+
 local function enableInvincibility()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
 
-    -- Set infinite health values
-    humanoid.MaxHealth = 69420
-    humanoid.Health = 69420
+    -- Set infinite health
+    humanoid.MaxHealth = math.huge
+    humanoid.Health = math.huge
 
-    -- Prevent game scripts from reducing health
+    -- Prevent health reductions
     invincibilityHealthConn = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
         if humanoid.Health < math.huge then
             humanoid.Health = math.huge
@@ -261,16 +266,26 @@ local function enableInvincibility()
     -- Disable death state
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
+    -- Disable `BreakJoints` to prevent forced death
+    character.BreakJoints = function() end
+
     -- Make body parts immune to kill parts
     for _, part in pairs(character:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CanTouch = false
+            part.Touched:Connect(function(hit)
+                if hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid") then
+                    humanoid.Health = math.huge
+                end
+            end)
         end
     end
 
-    -- Modify metatable to block health reductions
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
+    -- Block `TakeDamage()`
+    local oldTakeDamage = humanoid.TakeDamage
+    humanoid.TakeDamage = function() end
+
+    -- Block external attempts to change health
     originalNewIndex = originalNewIndex or mt.__newindex
     mt.__newindex = newcclosure(function(self, key, value)
         if self == humanoid and key == "Health" and value < math.huge then
@@ -281,15 +296,11 @@ local function enableInvincibility()
 
     -- Auto-respawn invincibility
     LocalPlayer.CharacterAdded:Connect(function(newCharacter)
-        wait(0.1)
-        character = newCharacter
-        humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.Health = math.huge
-            humanoid.MaxHealth = math.huge
-        end
+        wait(0.5)  -- Delay to let character fully load
+        enableInvincibility()  -- Reapply invincibility
     end)
 end
+
 
 local function disableInvincibility() -- broken, idk how to make this work right
     if invincibilityHealthConn then
