@@ -1,6 +1,6 @@
--- Load Evocati Hub v0.30 (based on Kavo Library)
+-- Load Evocati Hub v0.31 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub v0.30", "Ocean")
+local Window = Library.CreateLib("Evocati Hub v0.31", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
@@ -11,15 +11,27 @@ local FlightSection = PlayerTab:NewSection("Flight")
 local PlayerSection = PlayerTab:NewSection("Player")
 local ItemsTab = Window:NewTab("Items")
 local ItemsSection = ItemsTab:NewSection("Items")
-
-
-
 local InfoTab = Window:NewTab("Info")
 local InfoSection = InfoTab:NewSection("Info")
 
-InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", {"-Invincibility cannot fully disable", "-Scripts continue after close", "-No minimise button","-Heal button doesn't function properly","-In this dropdown, Clicking on an issue changes the title","-Hathub ui looks bad, will probably import in here","-Jerk off names arent consistent","-Add a comment on the github to report more issues"}, function(currentOption)
-    print("madebyevocati967")
-end)
+-- Credits Dropdown
+InfoSection:NewDropdown("Credits", "Credits for Evo Hub", 
+{"-Evocati967 | Creator",
+ "-WitchVR0390 | Helper",
+  "-PrinceLion33 | Made kavo library"
+}, function() print("madebyevocati967") end)
+
+-- Known Issues Dropdown
+InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", 
+{"-Invincibility cannot fully disable",
+ "-Scripts continue after close",
+  "-No minimise button",
+  "-Heal button doesn't function properly",
+  "-In this dropdown, Clicking on an issue changes the title",
+  "-Hathub ui looks bad, will probably import in here",
+  "-Jerk off names arent consistent",
+  "-Add a comment on the github to report more issues"
+}, function() print("madebyevocati967") end)
 
 -- Services and Variables
 local Players = game:GetService("Players")
@@ -32,31 +44,28 @@ local flightSpeed = 1
 local vertical = 0
 local directFlightMode = false
 local animConnection
-
--- Infinite Jump Variables
 local infiniteJumpEnabled = false
 local jumpConnection = nil
 local defaultWalkSpeed = 16
 local defaultJumpPower = 50
 _G.JumpHeight = 50
-
--- Invincibility Variables
 local invincibilityEnabled = false
 local invincibilityHealthConn = nil
 local originalNewIndex = nil
 
--- Utility functions to get character parts
+-- Utility functions
 local function getHumanoid()
     local character = LocalPlayer.Character
     return character and character:FindFirstChildOfClass("Humanoid")
 end
 
-local function sendNotif()
-	game:GetService("StarterGui"):SetCore("SendNotification", { 
-	Title = titel;
-	Text = txet;
-	Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
-	Duration = 5;
+local function sendNotif(titel, txet)
+    game:GetService("StarterGui"):SetCore("SendNotification", { 
+        Title = titel,
+        Text = txet,
+        Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150",
+        Duration = 5
+    })
 end
 
 local function getTorso()
@@ -64,7 +73,6 @@ local function getTorso()
     return character and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso"))
 end
 
--- Freeze current playing animations by setting their anim speed to 0
 local function freezeAnimations()
     local humanoid = getHumanoid()
     if not humanoid then return end
@@ -73,7 +81,6 @@ local function freezeAnimations()
     end
 end
 
--- Unfreeze animations by resetting their speed to 1
 local function unfreezeAnimations()
     local humanoid = getHumanoid()
     if not humanoid then return end
@@ -82,7 +89,7 @@ local function unfreezeAnimations()
     end
 end
 
--- Set up vertical movement keybindings (E for up, Q for down)
+-- Event Connections
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.E then
@@ -99,19 +106,17 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
--- Flight loop: sets up flight physics, freezes animations, and updates velocity in real time.
+-- Flight Functions
 local function flightLoop()
     local humanoid = getHumanoid()
     local torso = getTorso()
     if not humanoid or not torso then return end
 
-    -- Freeze animations immediately and pause any new ones
     freezeAnimations()
     animConnection = humanoid.AnimationPlayed:Connect(function(track)
         track:AdjustSpeed(0)
     end)
 
-    -- Create flight physics objects
     local bodyGyro = Instance.new("BodyGyro", torso)
     bodyGyro.P = 90000
     bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
@@ -121,26 +126,22 @@ local function flightLoop()
     bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
     bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 
-    -- Freeze default humanoid control
     humanoid.PlatformStand = true
 
-    -- Flight update loop
     while flightEnabled and humanoid and humanoid.Health > 0 do
         RunService.RenderStepped:Wait()
         local effectiveSpeed = flightSpeed * 20
         local velocity = Vector3.new(0, 0, 0)
         local camera = workspace.CurrentCamera
 
-        -- Capture vertical input for Q (down) and E (up)
         local vertical = 0
         if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-            vertical = -1 -- Move down
+            vertical = -1
         elseif UserInputService:IsKeyDown(Enum.KeyCode.E) then
-            vertical = 1 -- Move up
+            vertical = 1
         end
 
         if directFlightMode then
-            -- Camera-Direct mode: move only when WASD (and vertical) keys are pressed
             local moveVector = Vector3.new(0, 0, 0)
             if UserInputService:IsKeyDown(Enum.KeyCode.W) then
                 moveVector = moveVector + Vector3.new(0, 0, -1)
@@ -162,7 +163,6 @@ local function flightLoop()
                 velocity = Vector3.new(0, 0, 0)
             end
         else
-            -- Controlled mode: use Humanoid.MoveDirection and vertical input
             local moveDir = humanoid.MoveDirection
             velocity = (moveDir * effectiveSpeed) + Vector3.new(0, vertical * effectiveSpeed, 0)
         end
@@ -174,7 +174,6 @@ local function flightLoop()
         end
     end
 
-    -- Cleanup when flight is turned off or player dies
     if animConnection then
         animConnection:Disconnect()
         animConnection = nil
@@ -187,36 +186,23 @@ local function flightLoop()
     end
 end
 
--- Toggle flight on/off
 local function toggleFlight()
-	if flightEnabled == false then
-		titel = "Enabled"
-	else
-		titel = "Disabled"
-	end
-	txet = "Flight"
-	sendNotif()
     flightEnabled = not flightEnabled
+    local status = flightEnabled and "Enabled" or "Disabled"
+    sendNotif(status, "Flight")
     if flightEnabled then
         task.spawn(flightLoop)
     end
 end
 
--- Toggle flight mode: Controlled vs. Camera-Direct
 local function toggleFlightMode()
-	if directFlightMode == false then
-		titel = "Camera-Direct"
-	else
-		titel = "Controlled"
-	end
-	txet = "Flight Mode"
-	sendNotif()
     directFlightMode = not directFlightMode
     local mode = directFlightMode and "Camera-Direct" or "Controlled"
+    sendNotif(mode, "Flight Mode")
     print("Flight Mode: " .. mode)
 end
 
--- Toggle infinite jump on/off
+-- Infinite Jump Functions
 local function toggleInfiniteJump()
     infiniteJumpEnabled = not infiniteJumpEnabled
     if infiniteJumpEnabled then
@@ -224,11 +210,10 @@ local function toggleInfiniteJump()
             jumpConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 if gameProcessed then return end
                 if input.KeyCode == Enum.KeyCode.Space then
-                    local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    local humanoid = getHumanoid()
                     if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Seated then
                         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                            -- Preserve the X and Z velocity, only change the Y
                             hrp.Velocity = Vector3.new(hrp.Velocity.X, _G.JumpHeight, hrp.Velocity.Z)
                         end
                     end
@@ -241,37 +226,33 @@ local function toggleInfiniteJump()
             jumpConnection = nil
         end
     end
+    local status = infiniteJumpEnabled and "Enabled" or "Disabled"
+    sendNotif(status, "Infinite Jump")
 end
 
-
--- Invincibility functions
+-- Invincibility Functions
 local function enableInvincibility()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
 
-    -- Set infinite health values
     humanoid.MaxHealth = 69420
     humanoid.Health = 69420
 
-    -- Prevent game scripts from reducing health
     invincibilityHealthConn = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
         if humanoid.Health < math.huge then
             humanoid.Health = math.huge
         end
     end)
 
-    -- Disable death state
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-    -- Make body parts immune to kill parts
     for _, part in pairs(character:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CanTouch = false
         end
     end
 
-    -- Modify metatable to block health reductions
     local mt = getrawmetatable(game)
     setreadonly(mt, false)
     originalNewIndex = originalNewIndex or mt.__newindex
@@ -282,7 +263,6 @@ local function enableInvincibility()
         return originalNewIndex(self, key, value)
     end)
 
-    -- Auto-respawn invincibility
     LocalPlayer.CharacterAdded:Connect(function(newCharacter)
         wait(0.1)
         character = newCharacter
@@ -294,7 +274,7 @@ local function enableInvincibility()
     end)
 end
 
-local function disableInvincibility() -- broken, idk how to make this work right
+local function disableInvincibility()
     if invincibilityHealthConn then
         invincibilityHealthConn:Disconnect()
         invincibilityHealthConn = nil
@@ -310,33 +290,14 @@ local function disableInvincibility() -- broken, idk how to make this work right
     end
 end
 
-
 local function toggleInvincibility()
-		if invincibilityEnabled == false then
-		titel = "Enabled"
-	else
-		titel = "Disabled"
-	end
-	txet = "Invincibility"
-	sendNotif()
     invincibilityEnabled = not invincibilityEnabled
+    local status = invincibilityEnabled and "Enabled" or "Disabled"
+    sendNotif(status, "Invincibility")
     if invincibilityEnabled then
         enableInvincibility()
-        -- Change the health slider text to indicate it is disabled
-        if healthSlider and healthSlider.Main then
-            local title = healthSlider.Main:FindFirstChild("Title") -- UPDATE THIS
-            if title then
-                title.Text = "Health (disabled)"
-            end
-        end
     else
         disableInvincibility()
-        if healthSlider and healthSlider.Main then
-            local title = healthSlider.Main:FindFirstChild("Title")
-            if title then
-                title.Text = "Health"
-            end
-        end
     end
 end
 
@@ -363,12 +324,11 @@ end)
 MovementSection:NewSlider("Jump Power", "How high you jump", 250, 50, function(value)
     local humanoid = getHumanoid()
     if humanoid then
-		humanoid.UseJumpPower = true
+        humanoid.UseJumpPower = true
         humanoid.JumpPower = value
         defaultJumpPower = value
-
     end
-	_G.JumpHeight = value
+    _G.JumpHeight = value
 end)
 
 -- Monitor WalkSpeed and JumpPower to prevent changes
@@ -398,19 +358,12 @@ end)
 
 MovementSection:NewButton("Toggle Infinite Jump", "Enables or disables infinite jumping", function()
     toggleInfiniteJump()
-	if infiniteJumpEnabled == true then
-		titel = "Enabled"
-	else
-		titel = "Disabled"
-	end
-	txet = "Infinite Jump"
-	sendNotif()
 end)
 
 -- Player Section UI Elements
 local healthSlider = PlayerSection:NewSlider("Max Health", "Change your max health", 10000, 100, function(s)
     if invincibilityEnabled then
-        return  -- Ignore changes while invincibility is active
+        return
     end
     local humanoid = getHumanoid()
     if humanoid then
@@ -422,10 +375,9 @@ end)
 PlayerSection:NewButton("Heal", "Refills your health", function()
     local humanoid = getHumanoid()
     if humanoid then
-        -- Apply negative damage to heal
         while humanoid.Health < humanoid.MaxHealth do
-            humanoid:TakeDamage(-humanoid.Health-humanoid.MaxHealth)  -- Applying negative damage to heal
-            wait(0)  -- Delay to allow the health to regenerate
+            humanoid:TakeDamage(-humanoid.Health-humanoid.MaxHealth)
+            wait(0)
         end
     end
 end)
@@ -435,49 +387,37 @@ PlayerSection:NewButton("Toggle Invincibility", "Enables or Disables invincibili
 end)
 
 ItemsSection:NewButton("Click Teleport", "Wherever you click, you get teleported", function()
-    mouse = game.Players.LocalPlayer:GetMouse()
-	tool = Instance.new("Tool")
-	tool.RequiresHandle = false
-	tool.Name = "Click Teleport"
-	tool.Activated:connect(function()
-	local pos = mouse.Hit+Vector3.new(0,2.5,0)
-	pos = CFrame.new(pos.X,pos.Y,pos.Z)
-	game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = pos
-	end)
-	tool.Parent = game.Players.LocalPlayer.Backpack
-	end)
+    local mouse = game.Players.LocalPlayer:GetMouse()
+    local tool = Instance.new("Tool")
+    tool.RequiresHandle = false
+    tool.Name = "Click Teleport"
+    tool.Activated:connect(function()
+        local pos = mouse.Hit + Vector3.new(0, 2.5, 0)
+        pos = CFrame.new(pos.X, pos.Y, pos.Z)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+    end)
+    tool.Parent = game.Players.LocalPlayer.Backpack
+end)
 
 ItemsSection:NewButton("Jerk Off", "Jerk off item", function()
-	local function isR6(character)
-    	return character:FindFirstChild("Torso") and not character:FindFirstChild("UpperTorso")
-	end
+    local function isR6(character)
+        return character:FindFirstChild("Torso") and not character:FindFirstChild("UpperTorso")
+    end
 
-	local function isR15(character)
-    	return character:FindFirstChild("UpperTorso") ~= nil
-	end
+    local function isR15(character)
+        return character:FindFirstChild("UpperTorso") ~= nil
+    end
 
-	local player = game.Players.LocalPlayer
-	local character = player.Character or player.CharacterAdded:Wait()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
 
-	if isR6(character) then
-    	loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
-
-		-- Set notification values BEFORE calling sendNotif()
-		title = "Jerk Off"
-		text = "Item received"
-		sendNotif()
-		
-	elseif isR15(character) then
-    	loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
-
-		-- Set notification values BEFORE calling sendNotif()
-		title = "Jerk Off"
-		text = "Item received"
-		sendNotif()
-		
-	else
-    	title = "Jerk Off Error:"
-		text = "Unknown character type"
-		sendNotif()
-	end
+    if isR6(character) then
+        loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
+        sendNotif("Jerk Off", "Item received")
+    elseif isR15(character) then
+        loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
+        sendNotif("Jerk Off", "Item received")
+    else
+        sendNotif("Jerk Off Error:", "Unknown character type")
+    end
 end)
