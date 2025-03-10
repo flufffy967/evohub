@@ -23,13 +23,11 @@ InfoSection:NewDropdown("Credits", "Credits for Evo Hub",
 
 -- Known Issues Dropdown
 InfoSection:NewDropdown("Known Issues", "Issues about Evo hub", 
-{"-Invincibility cannot fully disable",
- "-Scripts continue after close",
+{"-Invincibility cannot disable",
+ "-walk+jump conflicts after reopen",
   "-No minimise button",
   "-Heal button doesn't function properly",
   "-In this dropdown, Clicking on an issue changes the title",
-  "-Hathub ui looks bad, will probably import in here",
-  "-Jerk off names arent consistent",
   "-Add a comment on the github to report more issues"
 }, function() print("madebyevocati967") end)
 
