@@ -1,6 +1,6 @@
--- Load Evocati Hub v0.31 (based on Kavo Library)
+-- Load Evocati Hub v0.32 (based on Kavo Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Evocati Hub v0.31", "Ocean")
+local Window = Library.CreateLib("Evocati Hub v0.32", "Ocean")
 
 -- Create Tabs and Sections
 local AdminTab = Window:NewTab("Admin")
@@ -50,6 +50,8 @@ _G.JumpHeight = 50
 local invincibilityEnabled = false
 local invincibilityHealthConn = nil
 local originalNewIndex = nil
+local mxspd = maxspeedslider
+local mxjmp = maxjumpslider
 
 -- Utility functions
 local function getHumanoid()
@@ -311,7 +313,7 @@ AdminSection:NewButton("HatHub (Just a baseplate)", "Only works on 'Just a basep
 end)
 
 -- Movement Section UI Elements
-MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 16, function(value)
+MovementSection:NewSlider("WalkSpeed", "How fast you walk", mxspd, 16, function(value)
     local humanoid = getHumanoid()
     if humanoid then
         humanoid.WalkSpeed = value
@@ -319,7 +321,7 @@ MovementSection:NewSlider("WalkSpeed", "How fast you walk", 500, 16, function(va
     end
 end)
 
-MovementSection:NewSlider("Jump Power", "How high you jump", 250, 50, function(value)
+MovementSection:NewSlider("Jump Power", "How high you jump", mxjmp, 50, function(value)
     local humanoid = getHumanoid()
     if humanoid then
         humanoid.UseJumpPower = true
