@@ -1,2 +1,7 @@
---Evocati Library V0.31
+--Evocati Library V0.32
+
+--this sets the maximum slider value of your character speed and jump height. Smaller numbers result in more accurate speed settings, but higher numbers will let you go further.
+local maxspeedslider = 500
+local maxjumpslider = 250
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/flufffy967/evohub/refs/heads/main/evohub"))()
